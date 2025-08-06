@@ -95,6 +95,7 @@ public final class ConverseApiUtils {
 			ChatResponse perviousChatResponse) {
 
 		AtomicBoolean isInsideTool = new AtomicBoolean(false);
+		StringBuffer assistantMessageContentBuffer = new StringBuffer();
 
 		return responses.map(event -> {
 			if (ConverseApiUtils.isToolUseStart(event)) {
@@ -140,7 +141,8 @@ public final class ConverseApiUtils {
 					}
 				}
 
-				AssistantMessage assistantMessage = new AssistantMessage("", Map.of(), toolCalls);
+				AssistantMessage assistantMessage = new AssistantMessage(assistantMessageContentBuffer.toString(),
+						Map.of(), toolCalls);
 				Generation toolCallGeneration = new Generation(assistantMessage,
 						ChatGenerationMetadata.builder().finishReason("tool_use").build());
 
@@ -174,6 +176,8 @@ public final class ConverseApiUtils {
 			}
 			else if (nextEvent instanceof ContentBlockDeltaEvent contentBlockDeltaEvent) {
 				if (contentBlockDeltaEvent.delta().type().equals(ContentBlockDelta.Type.TEXT)) {
+
+					assistantMessageContentBuffer.append(contentBlockDeltaEvent.delta().text());
 
 					var generation = new Generation(
 							new AssistantMessage(contentBlockDeltaEvent.delta().text(), Map.of()),
