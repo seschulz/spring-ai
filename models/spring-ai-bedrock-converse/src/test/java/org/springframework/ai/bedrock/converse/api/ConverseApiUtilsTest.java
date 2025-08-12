@@ -33,46 +33,48 @@ import javax.management.relation.Role;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
 class ConverseApiUtilsTest {
 
 	@Test
 	void bufferedAssistantMessageContentIsUsedForToolCall() {
-	
+
 		AtomicInteger index = new AtomicInteger(0);
 		List<ConverseStreamOutput> events = new ArrayList<>();
 		String assistantMessageText = "Let me get the weather forecast for you";
 		String toolUseId = "toolUseId1";
 		String toolUseName = "weather";
-		String toolUseArguments ="{\"latitude\":\"34.0522\", \"longitude\":\"-118.2427\"}";
+		String toolUseArguments = "{\"latitude\":\"34.0522\", \"longitude\":\"-118.2427\"}";
 
 		// Arrange:
 		// Assistant response to announce tool call
 		events.add(DefaultMessageStart.builder().role(ConversationRole.ASSISTANT).build());
-		events.add(DefaultContentBlockDelta.builder().contentBlockIndex(index.get())
-				.delta(ContentBlockDelta.builder().text(assistantMessageText).build()).build());
+		events.add(DefaultContentBlockDelta.builder()
+			.contentBlockIndex(index.get())
+			.delta(ContentBlockDelta.builder().text(assistantMessageText).build())
+			.build());
 		events.add(DefaultContentBlockStop.builder().contentBlockIndex(index.get()).build());
 
 		// Tool use
 		events.add(DefaultContentBlockStart.builder()
-				.contentBlockIndex(index.addAndGet(1))
-				.start(ContentBlockStart.builder()
-						.toolUse(ToolUseBlockStart.builder().toolUseId(toolUseId).name(toolUseName).build())
-						.build())
-				.build());
-		events.add(DefaultContentBlockDelta.builder().contentBlockIndex(index.get())
-				.delta(ContentBlockDelta.builder()
-						.toolUse(ToolUseBlockDelta.builder().input(toolUseArguments).build())
-						.build())
-				.build());
+			.contentBlockIndex(index.addAndGet(1))
+			.start(ContentBlockStart.builder()
+				.toolUse(ToolUseBlockStart.builder().toolUseId(toolUseId).name(toolUseName).build())
+				.build())
+			.build());
+		events.add(DefaultContentBlockDelta.builder()
+			.contentBlockIndex(index.get())
+			.delta(ContentBlockDelta.builder()
+				.toolUse(ToolUseBlockDelta.builder().input(toolUseArguments).build())
+				.build())
+			.build());
 		events.add(DefaultContentBlockStop.builder().contentBlockIndex(index.get()).build());
 		events.add(DefaultMessageStop.builder().stopReason(StopReason.TOOL_USE).build());
-		
+
 		// Metadata
 		events.add(DefaultMetadata.builder()
-				.usage(TokenUsage.builder().inputTokens(10).outputTokens(5).totalTokens(15).build())
-						.metrics(ConverseStreamMetrics.builder().latencyMs(1234L).build())
-				.build());
+			.usage(TokenUsage.builder().inputTokens(10).outputTokens(5).totalTokens(15).build())
+			.metrics(ConverseStreamMetrics.builder().latencyMs(1234L).build())
+			.build());
 		Flux<ConverseStreamOutput> eventsFlux = Flux.fromIterable(events);
 
 		// Act
